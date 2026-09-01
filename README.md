@@ -80,6 +80,41 @@ Full write-up: [docs/architecture.md](docs/architecture.md). Interview answers: 
 
 **Queue honesty:** Redis + BullMQ is the production scale-up (retries, crash recovery, multiple workers). This submission uses a PostgreSQL job table and an in-process worker so the evaluator can run a single process. Jobs *are* persisted; the worker itself is not a distributed consumer. See architecture trade-offs.
 
+## Project Structure
+
+├── docs/                     # Architecture, demo script, interview notes, checklist
+├── migrations/               # SQL schema migrations
+├── public/                   # Static assets
+├── screenshots/              # Demo screenshots
+├── scripts/                  # Dev helpers, migrate, tests, preview tooling
+├── server/                   # Server middleware
+├── src/
+│   ├── components/
+│   │   ├── dashboard/        # Live blotter UI
+│   │   └── ui/               # Shared UI primitives
+│   ├── hooks/                # React hooks
+│   ├── lib/
+│   │   ├── bse/              # Mock BSE generation & Zod schema
+│   │   ├── events/           # SSE hub / fan-out
+│   │   ├── jobs/             # Job state machine & transitions
+│   │   ├── trades/           # Trade persistence helpers
+│   │   ├── app-data/         # App data utilities
+│   │   ├── auth/             # Auth-related helpers
+│   │   ├── db.ts             # Database client (PGLite / Postgres)
+│   │   └── config.ts         # Runtime configuration
+│   ├── routes/
+│   │   ├── api/              # /api/trades, /api/pulls, /api/events, …
+│   │   ├── getTrades.ts      # Mock BSE endpoint
+│   │   ├── health.ts         # Health check
+│   │   └── index.tsx         # Dashboard page
+│   ├── services/             # Higher-level services
+│   └── types/                # Shared TypeScript types
+├── docker-compose.yml        # Optional real Postgres
+├── package.json
+├── startup.sh
+├── tsconfig.json
+└── vite.config.ts
+
 ## Prerequisites
 
 - Node.js 22+
@@ -188,13 +223,13 @@ SSE stream. Events: `connected`, `pull.started`, `pull.progress`, `pull.complete
 
 ## Demo
 
-1. Open the dashboard. Existing trades appear immediately.
-2. Note **SSE live** in the header.
-3. Click **Start Pull**. The button disables; status becomes `RUNNING`. The POST already returned.
-4. Search, filter, paginate — the blotter stays usable while the worker waits on Mock BSE.
-5. When BSE finishes, the worker upserts and the dashboard receives `pull.completed`. New trades appear. No refresh.
+<video-card alt="Demo video" src="Demo/Demo.mp4">
 
-Default delay is **5 seconds**. To simulate 15 minutes set `BSE_DELAY_MS=900000` and restart.
+<image-card alt="Dashboard with seeded trades" src="screenshots/01-dashboard.png" ></image-card>
+<image-card alt="Pull in progress" src="screenshots/02-pull-running.png" ></image-card>
+<image-card alt="New trades after completion" src="screenshots/03-pull-completed.png" ></image-card>
+<image-card alt="." src="screenshots/pull-completed.png" ></image-card>
+<image-card alt=".." src="screenshots/Blotter.png" ></image-card>
 
 ## Testing
 
@@ -222,6 +257,16 @@ Unit tests cover tape generation, BSE payload validation, job state transitions,
 Asynchronous processing + SSE is the whole point of the assessment. The 30-second network limit and the 15-minute BSE pull cannot share one HTTP request. A job, a worker, persistent storage, and a push channel can.
 
 Polling (`setInterval` asking "is it finished?") is forbidden and unnecessary. Cron is forbidden — pulls are user-triggered.
+
+## Engineering Trade-offs
+
+| Choice | Why it was made | Cost in a larger |production system|
+| --- | --- | --- |
+| In-process worker | Single-command evaluator experience; still demonstrates 202 + independent work | No multi-process durability; process crash loses the in-flight fetch (job row + stale recovery heals it)|
+| SSE instead of WebSockets | One-way server→browser notifications | No client→server messages on that socket (not needed) |
+| One active pull at a time | Simple accounting, no overlapping upsert races | Throughput limited to 1 concurrent BSE pull |
+| Unique tradeId + DO NOTHING | Exact duplicate semantics required by the assessment | Cannot update an amended trade without a version/hash policy |
+| Embedded PGLite for preview | Zero-ops local demo| Data resets when the process dies; production uses real Postgres/Neon|
 
 ## Future improvements
 
