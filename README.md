@@ -82,6 +82,7 @@ Full write-up: [docs/architecture.md](docs/architecture.md). Interview answers: 
 
 ## Project Structure
 
+```text
 ├── docs/                     # Architecture, demo script, interview notes, checklist
 ├── migrations/               # SQL schema migrations
 ├── public/                   # Static assets
@@ -114,6 +115,7 @@ Full write-up: [docs/architecture.md](docs/architecture.md). Interview answers: 
 ├── startup.sh
 ├── tsconfig.json
 └── vite.config.ts
+```
 
 ## Prerequisites
 
@@ -221,15 +223,30 @@ Job row, or `404`.
 
 SSE stream. Events: `connected`, `pull.started`, `pull.progress`, `pull.completed`, `pull.failed`. Heartbeat comments every 15s. This is **not** the BSE request.
 
+
+---
+
+### Demo section (recommended clean version)
+
+```markdown
 ## Demo
 
-<video-card alt="Demo video" src="Demo/Demo.mp4">
+**Demo video title:** BSE Trade Ingestion & Live Dashboard – Asynchronous Pull + SSE Walkthrough
 
-<image-card alt="Dashboard with seeded trades" src="screenshots/01-dashboard.png" ></image-card>
-<image-card alt="Pull in progress" src="screenshots/02-pull-running.png" ></image-card>
-<image-card alt="New trades after completion" src="screenshots/03-pull-completed.png" ></image-card>
-<image-card alt="." src="screenshots/pull-completed.png" ></image-card>
-<image-card alt=".." src="screenshots/Blotter.png" ></image-card>
+<video src="Demo/Demo.mp4" controls width="100%"></video>
+
+### Screenshots
+
+![Dashboard with seeded trades](screenshots/01-dashboard.png)
+
+![Pull in progress](screenshots/02-pull-running.png)
+
+![New trades after completion](screenshots/03-pull-completed.png)
+
+![Pull completed](screenshots/pull-completed.png)
+
+![Blotter](screenshots/Blotter.png)
+```
 
 ## Testing
 
@@ -260,13 +277,15 @@ Polling (`setInterval` asking "is it finished?") is forbidden and unnecessary. C
 
 ## Engineering Trade-offs
 
-| Choice | Why it was made | Cost in a larger |production system|
+## Engineering Trade-offs
+
+| Choice | Why it was made | Cost in a larger production system |
 | --- | --- | --- |
-| In-process worker | Single-command evaluator experience; still demonstrates 202 + independent work | No multi-process durability; process crash loses the in-flight fetch (job row + stale recovery heals it)|
+| In-process worker | Single-command evaluator experience; still demonstrates 202 + independent work | No multi-process durability; process crash loses the in-flight fetch (job row + stale recovery heals it) |
 | SSE instead of WebSockets | One-way server→browser notifications | No client→server messages on that socket (not needed) |
 | One active pull at a time | Simple accounting, no overlapping upsert races | Throughput limited to 1 concurrent BSE pull |
-| Unique tradeId + DO NOTHING | Exact duplicate semantics required by the assessment | Cannot update an amended trade without a version/hash policy |
-| Embedded PGLite for preview | Zero-ops local demo| Data resets when the process dies; production uses real Postgres/Neon|
+| Unique `tradeId` + `DO NOTHING` | Exact duplicate semantics required by the assessment | Cannot update an amended trade without a version/hash policy |
+| Embedded PGLite for preview | Zero-ops local demo | Data resets when the process dies; production uses real Postgres/Neon |
 
 ## Future improvements
 
