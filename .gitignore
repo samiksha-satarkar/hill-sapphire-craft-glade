@@ -9,6 +9,4 @@ dist
 *.log
 .DS_Store
 coverage
-screenshots/*.png
-screenshots/*.json
 /tmp
