@@ -226,7 +226,6 @@ SSE stream. Events: `connected`, `pull.started`, `pull.progress`, `pull.complete
 
 ---
 
-### Demo section 
 
 ## Demo
 
