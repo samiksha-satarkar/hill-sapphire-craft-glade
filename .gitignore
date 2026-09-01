@@ -1,0 +1,14 @@
+node_modules
+dist
+.output
+.vercel
+.nitro
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+coverage
+screenshots/*.png
+screenshots/*.json
+/tmp
