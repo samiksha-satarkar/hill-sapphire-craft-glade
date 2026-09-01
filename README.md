@@ -226,9 +226,8 @@ SSE stream. Events: `connected`, `pull.started`, `pull.progress`, `pull.complete
 
 ---
 
-### Demo section (recommended clean version)
+### Demo section 
 
-```markdown
 ## Demo
 
 **Demo video title:** BSE Trade Ingestion & Live Dashboard – Asynchronous Pull + SSE Walkthrough
@@ -246,7 +245,6 @@ SSE stream. Events: `connected`, `pull.started`, `pull.progress`, `pull.complete
 ![Pull completed](screenshots/pull-completed.png)
 
 ![Blotter](screenshots/Blotter.png)
-```
 
 ## Testing
 
